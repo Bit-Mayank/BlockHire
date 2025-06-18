@@ -1,0 +1,41 @@
+# Node modules
+node_modules/
+
+# Hardhat artifacts & cache
+artifacts/
+cache/
+typechain/
+typechain-types/
+
+# Hardhat temporary files
+coverage/
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+frontend/build/
+frontend/dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs & OS files
+.DS_Store
+.vscode/
+.idea/
+
+# Frontend lock files
+frontend/package-lock.json
+frontend/yarn.lock
+
+# Hardhat log
+hardhat.log
+
+# Generated contract address
+frontend/src/contracts/FreelanceEscrow-address.json
