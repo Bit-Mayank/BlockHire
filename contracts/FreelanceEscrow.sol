@@ -245,4 +245,26 @@ contract FreelanceEscrow is ReentrancyGuard {
     function jobsOf(address user) external view returns (uint256[] memory) {
         return jobsByUser[user];
     }
+
+    function listOpenJobs() external view returns (Job[] memory) {
+        // First pass: count the number of open jobs
+        uint256 openCount = 0;
+        for (uint256 jobId = 1; jobId <= jobCount; jobId++) {
+            if (jobs[jobId].status == JobStatus.Open) {
+                openCount++;
+            }
+        }
+
+        // Second pass: populate the array
+        Job[] memory openJobs = new Job[](openCount);
+        uint256 index = 0;
+        for (uint256 jobId = 1; jobId <= jobCount; jobId++) {
+            if (jobs[jobId].status == JobStatus.Open) {
+                openJobs[index] = jobs[jobId];
+                index++;
+            }
+        }
+
+        return openJobs;
+    }
 }

@@ -15,7 +15,7 @@ describe("FreelanceEscrow", function () {
         Escrow = await ethers.getContractFactory("FreelanceEscrow");
         escrow = await Escrow.deploy();
         await escrow.waitForDeployment(); // Recommended for newer Hardhat + Ethers
-        console.log(`Contract Deployea at: ${escrow.address}`)
+        console.log(`Contract Deployed at: ${escrow.address}`)
 
     });
 

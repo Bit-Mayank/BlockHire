@@ -1,18 +1,18 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import Home from './components/Home.jsx'
 import { ChainContextProvider } from './context/ChainContextProvider.jsx'
 import {
   createBrowserRouter,
   RouterProvider,
 } from 'react-router'
-import About from './components/About.jsx'
-import Header from './components/Header.jsx'
-import Layout from './components/Layout.jsx'
-import Profile from './components/Profile.jsx'
+import Home from './pages/Home.jsx'
+import About from './pages/About.jsx'
+import Layout from './pages/Layout.jsx'
+import Profile from './pages/Profile.jsx'
 import Custom from './components/Custom.jsx'
-import JobPost from './components/JobPost.jsx'
+import JobPost from './pages/JobPost.jsx'
+import JobPage from './pages/JobPage.jsx'
 
 const router = createBrowserRouter([
   {
@@ -35,6 +35,10 @@ const router = createBrowserRouter([
       {
         path: 'createJob',
         element: <JobPost />
+      },
+      {
+        path: 'job/:jobId',
+        element: <JobPage />
       }
     ]
   },
