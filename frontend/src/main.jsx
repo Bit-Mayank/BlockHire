@@ -13,12 +13,15 @@ import Profile from './pages/Profile.jsx'
 import Custom from './components/Custom.jsx'
 import JobPost from './pages/JobPost.jsx'
 import JobPage from './pages/JobPage.jsx'
+import EditProfile from './pages/EditProfile.jsx'
+import AuthCheck from './pages/AuthCheck.jsx'
+import BidderProfile from './pages/bidderProfile.jsx'
 
 const router = createBrowserRouter([
   {
     //If want to add components in the Layout add children here
     path: '/',
-    element: <Layout />,
+    element: <AuthCheck />,
     children: [
       {
         path: '',
@@ -39,6 +42,14 @@ const router = createBrowserRouter([
       {
         path: 'job/:jobId',
         element: <JobPage />
+      },
+      {
+        path: 'edit-profile',
+        element: <EditProfile />
+      },
+      {
+        path: 'bidder/:bidderAddress',
+        element: <BidderProfile />
       }
     ]
   },
@@ -52,8 +63,6 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ChainContextProvider>
-      <RouterProvider router={router} />
-    </ChainContextProvider>
+    <RouterProvider router={router} />
   </StrictMode>,
 )

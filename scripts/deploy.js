@@ -22,6 +22,9 @@ async function main() {
     // console.log(escrow);
     saveFrontendFiles(deployedAddress, "FreelanceEscrow");
 
+    const tx = await escrow.connect(client).registerUser(); // uses default profileCID = ""
+    await tx.wait();
+
     const Job1 = await escrow.connect(client).createJob("Logo Design", parseEther('5'), "bafkreiholqy4g264iteddj76xabeeqjbuyroefdmfifla6e36ogds76ibq")
     await Job1.wait();
     const Job2 = await escrow.connect(client).createJob("Website Design", parseEther('3'), "bafkreiholqy4g264iteddj76xabeeqjbuyroefdmfifla6e36ogds76ibq")

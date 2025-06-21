@@ -26,6 +26,16 @@ contract FreelanceEscrow is ReentrancyGuard {
         uint256 amount; // wei
     }
 
+    struct UserProfile {
+        bool isRegistered;
+        string profileCID;
+        uint256[] jobsPosted;
+        uint256[] jobsCompleted;
+        uint256 totalSpent;
+        uint256 totalEarned;
+        uint256[] jobsBidOn;
+    }
+
     struct Job {
         uint256 jobId;
         address client;
@@ -41,6 +51,9 @@ contract FreelanceEscrow is ReentrancyGuard {
     mapping(uint256 => Job) public jobs; // jobId → Job
     mapping(uint256 => Bid[]) private bids; // jobId → bids
     mapping(address => uint256[]) private jobsByUser; // user → jobIds
+    mapping(address => UserProfile) public userProfiles;
+    mapping(uint256 => mapping(address => uint256)) public bidAmounts; //JodId -> user -> kitna dia
+    mapping(uint256 => mapping(address => bool)) public hasBid;
 
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
@@ -66,6 +79,12 @@ contract FreelanceEscrow is ReentrancyGuard {
     event DisputeRaised(uint256 indexed id);
     event DisputeResolved(uint256 indexed id, bool releasedToFreelancer);
     event JobCancelled(uint256 indexed id);
+    event UserRegistered(address indexed user);
+    event BidRefunded(
+        uint256 indexed jobId,
+        address indexed bidder,
+        uint256 amount
+    );
 
     /* -------------------------------------------------------------------------- */
     /*                                  MODIFIERS                                 */
@@ -106,18 +125,62 @@ contract FreelanceEscrow is ReentrancyGuard {
         J.budget = _budget;
         J.status = JobStatus.Open;
 
+        userProfiles[msg.sender].jobsPosted.push(jobCount);
         jobsByUser[msg.sender].push(jobCount);
 
         emit JobCreated(jobCount, msg.sender, _budget);
     }
 
-    /// @notice Freelancers place bids (optionally with refundable deposit)
-    function placeBid(uint256 id) external payable nonReentrant {
-        Job storage J = jobs[id];
-        require(J.status == JobStatus.Open, "Job not open");
-        bids[id].push(Bid(msg.sender, msg.value)); // 0-value bid is allowed
+    /// @notice Registration of new User
+    function registerUser() external {
+        require(!userProfiles[msg.sender].isRegistered, "Already registered");
 
-        emit BidPlaced(id, msg.sender, msg.value);
+        userProfiles[msg.sender] = UserProfile({
+            isRegistered: true,
+            profileCID: "",
+            jobsPosted: new uint256[](0),
+            jobsCompleted: new uint256[](0),
+            jobsBidOn: new uint256[](0),
+            totalSpent: 0,
+            totalEarned: 0
+        });
+
+        emit UserRegistered(msg.sender);
+    }
+
+    /// @notice Freelancers place bids (optionally with refundable deposit)
+    function placeBid(uint256 jobId) external payable nonReentrant {
+        Job storage J = jobs[jobId];
+        require(J.status == JobStatus.Open, "Job not open");
+        require(!hasBid[jobId][msg.sender], "Already placed a bid");
+        require(msg.value > 0, "Bid must be greater than 0");
+
+        // Record the bid
+        bids[jobId].push(Bid(msg.sender, msg.value));
+        hasBid[jobId][msg.sender] = true;
+        bidAmounts[jobId][msg.sender] = msg.value;
+        userProfiles[msg.sender].jobsBidOn.push(jobId);
+
+        emit BidPlaced(jobId, msg.sender, msg.value);
+    }
+
+    function refundBid(uint256 jobId) external nonReentrant {
+        require(hasBid[jobId][msg.sender], "You did not bid on this job");
+        require(jobs[jobId].freelancer != msg.sender, "Winner cannot withdraw");
+
+        uint256 amount = bidAmounts[jobId][msg.sender];
+        require(amount > 0, "No funds to withdraw");
+
+        // Prevent reentrancy before transfer
+        for (uint i = 0; i < bids[jobId].length; i++) {
+            if (bids[jobId][i].bidder == msg.sender) {
+                bids[jobId][i].amount = 0;
+                break;
+            }
+        }
+        bidAmounts[jobId][msg.sender] = 0;
+
+        payable(msg.sender).transfer(amount);
     }
 
     /// @notice Client selects a freelancer and funds escrow with exactly the job budget (ETH)
@@ -158,12 +221,17 @@ contract FreelanceEscrow is ReentrancyGuard {
 
         uint256 payout = J.escrow;
         J.escrow = 0;
-        J.status = JobStatus.Approved; // will mark Closed after transfer
+        J.status = JobStatus.Approved;
 
         (bool ok, ) = payable(J.freelancer).call{value: payout}("");
         require(ok, "Transfer failed");
 
+        userProfiles[J.client].totalSpent += J.budget;
+        userProfiles[J.freelancer].totalEarned += J.budget;
+        userProfiles[J.freelancer].jobsCompleted.push(id);
+
         J.status = JobStatus.Closed;
+
         emit JobApproved(id, payout);
     }
 
@@ -225,6 +293,9 @@ contract FreelanceEscrow is ReentrancyGuard {
         if (releaseToFreelancer) {
             (bool ok, ) = payable(J.freelancer).call{value: amount}("");
             require(ok, "Transfer failed");
+
+            userProfiles[J.freelancer].totalEarned += J.budget;
+            userProfiles[J.freelancer].jobsCompleted.push(id);
         } else {
             (bool ok, ) = payable(J.client).call{value: amount}("");
             require(ok, "Refund failed");
@@ -237,6 +308,10 @@ contract FreelanceEscrow is ReentrancyGuard {
     /* -------------------------------------------------------------------------- */
     /*                                READ HELPERS                                */
     /* -------------------------------------------------------------------------- */
+
+    function isUserRegistered(address user) external view returns (bool) {
+        return userProfiles[user].isRegistered;
+    }
 
     function listBids(uint256 id) external view returns (Bid[] memory) {
         return bids[id];
@@ -266,5 +341,40 @@ contract FreelanceEscrow is ReentrancyGuard {
         }
 
         return openJobs;
+    }
+
+    function getJobsByIds(
+        uint256[] memory ids
+    ) public view returns (Job[] memory) {
+        Job[] memory result = new Job[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) {
+            result[i] = jobs[ids[i]];
+        }
+        return result;
+    }
+
+    function getFullUserProfile(
+        address user
+    )
+        external
+        view
+        returns (
+            string memory profileCID,
+            uint256 totalSpent,
+            uint256 totalEarned,
+            uint256[] memory jobsPosted,
+            uint256[] memory jobsCompleted,
+            uint256[] memory jobsBidOn
+        )
+    {
+        UserProfile storage p = userProfiles[user];
+        return (
+            p.profileCID,
+            p.totalSpent,
+            p.totalEarned,
+            p.jobsPosted,
+            p.jobsCompleted,
+            p.jobsBidOn
+        );
     }
 }

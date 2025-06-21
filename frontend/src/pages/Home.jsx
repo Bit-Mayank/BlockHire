@@ -6,13 +6,13 @@ import ConnectWallet from "../components/ConnectWallet";
 
 function Home() {
 
-  const { account } = useContext(ChainContext)
+  const { account, isRegistered } = useContext(ChainContext)
 
   return (
     <div className=" min-h-screen bg-gray-950 flex pb-16">
       <div className={`w-full relative top-14 border-2 border-red-600 flex `}>
         {
-          account ?
+          account && isRegistered ?
             <JobsList jobStatus="Open" />
             :
             <ConnectWallet />

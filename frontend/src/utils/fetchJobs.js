@@ -1,15 +1,4 @@
-const getStatus = (code) => {
-    const statuses = [
-        "Open",
-        "In Progress",
-        "Submitted",
-        "Approved",
-        "Disputed",
-        "Closed",
-        "Cancelled",
-    ];
-    return statuses[code] || "Unknown";
-};
+
 
 export const fetchJobs = async (jobStatus, contract) => {
     try {
@@ -40,10 +29,10 @@ export const fetchJobs = async (jobStatus, contract) => {
                 }
 
                 return {
-                    id: id.toString(),
+                    jobId: id.toString(),
                     title: job.title,
                     budget: job.budget.toString(),
-                    status: getStatus(job.status),
+                    status: job.status,
                     freelancer: job.freelancer,
                     specCID: cid,
                     metadata,

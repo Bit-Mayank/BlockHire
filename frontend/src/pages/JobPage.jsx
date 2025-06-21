@@ -2,18 +2,39 @@ import React, { useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { formatEther, parseEther } from 'ethers';
 import { ChainContext } from '../context/ChainContextProvider';
+import BidList from '../components/BidList';
+import { getStatus } from '../utils/jobUtils';
 
 function JobPage() {
     const { jobId } = useParams();
     const [job, setJob] = useState(null);
     const { contract, signer, account } = useContext(ChainContext);
     const [bidAmount, setBidAmount] = useState('');
+    const [bids, setBids] = useState([]);
+    const [loading, setIsLoading] = useState(false);
+
+    const handleSelectFreelancer = async (bidderAddress) => {
+        try {
+            setIsLoading(true)
+            const tx = await contract.selectFreelancer(jobId, bidderAddress, {
+                value: job.budget.toString()
+            });
+            await tx.wait();
+            alert("Freelancer selected!");
+            setIsLoading(false)
+        } catch (err) {
+            setIsLoading(false)
+            console.error("Failed to select freelancer:", err);
+        }
+    };
 
     const handlePlaceBid = async () => {
         if (!bidAmount || isNaN(Number(bidAmount)) || Number(bidAmount) <= 0) {
             alert('Please enter a valid bid amount.');
             return;
         }
+
+        setIsLoading(true);
 
         try {
             const tx = await contract.connect(signer).placeBid(Number(jobId), {
@@ -27,24 +48,29 @@ function JobPage() {
             } else {
                 alert('Transaction failed.');
             }
+            setIsLoading(false)
         } catch (err) {
             console.error('Failed to place bid:', err);
+            setIsLoading(false)
             alert('Transaction failed: ' + (err.reason || err.message || 'Unknown error'));
         }
     };
 
-    const getStatus = (code) => {
-        const statuses = [
-            'Open',
-            'In Progress',
-            'Submitted',
-            'Approved',
-            'Disputed',
-            'Closed',
-            'Cancelled',
-        ];
-        return statuses[code] || 'Unknown';
-    };
+    const handleWithdraw = async () => {
+        try {
+
+            setIsLoading(true);
+            const response = await contract.connect(signer).refundBid(jobId);
+            await response.wait();
+
+            alert("Withdrawl Successful");
+            setIsLoading(false);
+        } catch (e) {
+            setIsLoading(false);
+            alert("Something went wrong with withdraw");
+            console.error("BidList: handleWithdraw: ", e)
+        }
+    }
 
     useEffect(() => {
         const fetchJob = async () => {
@@ -84,14 +110,20 @@ function JobPage() {
             }
         };
 
+        const fetchBids = async () => {
+            const jobBids = await contract.listBids(jobId);
+            setBids(jobBids);
+        };
+
         if (contract && jobId) {
             fetchJob();
+            fetchBids();
         }
-    }, [contract, jobId]);
+    }, [contract, jobId, loading]);
 
     return (
         <div className="min-h-screen bg-gray-950 pb-16">
-            <div className="flex justify-center min-h-screen items-center relative top-14">
+            <div className="flex justify-center min-h-screen items-center relative top-14 p-2">
                 {job && (
                     <div className="bg-zinc-800 text-white rounded-xl shadow-md border border-zinc-700 hover:shadow-lg transition h-fit">
                         <div className={`grid gap-8 p-4 ${job.imageUrl ? "md:grid-cols-2" : "grid-cols-1"}`}>
@@ -174,6 +206,17 @@ function JobPage() {
                                 </button>
                             </div>
                         )}
+
+
+                        {/* Show bid list */}
+                        <BidList
+                            bids={bids}
+                            jobClient={job.client}
+                            selectFreelancer={handleSelectFreelancer}
+                            loading={loading}
+                            status={job.status}
+                            handleWithdraw={handleWithdraw}
+                        />
                     </div>
                 )}
             </div>

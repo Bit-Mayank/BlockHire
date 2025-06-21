@@ -1,6 +1,7 @@
 import React from "react";
 import { formatEther } from "ethers";
 import { useNavigate } from "react-router"
+import { getStatus } from "../utils/jobUtils";
 
 const JobCard = ({ job }) => {
     const navigate = useNavigate();
@@ -8,7 +9,7 @@ const JobCard = ({ job }) => {
     return (
         <div className=" bg-zinc-800 text-white rounded-xl shadow-md border border-zinc-700 hover:shadow-lg transition h-fit cursor-pointer"
             onClick={() => {
-                const jobLink = "/job/" + job.id.toString();
+                const jobLink = "/job/" + job.jobId.toString();
                 navigate(jobLink)
             }}
         >
@@ -26,7 +27,7 @@ const JobCard = ({ job }) => {
                         </p>
                         <p>
                             <span className="text-gray-400 font-medium">Status:</span>{" "}
-                            {job.status}
+                            {getStatus(job.status)}
                         </p>
                     </div>
 
