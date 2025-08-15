@@ -16,6 +16,7 @@ import JobPage from './pages/JobPage.jsx'
 import EditProfile from './pages/EditProfile.jsx'
 import AuthCheck from './pages/AuthCheck.jsx'
 import BidderProfile from './pages/bidderProfile.jsx'
+import AdminPanel from './pages/AdminPanel.jsx'
 
 const router = createBrowserRouter([
   {
@@ -50,6 +51,10 @@ const router = createBrowserRouter([
       {
         path: 'bidder/:bidderAddress',
         element: <BidderProfile />
+      },
+      {
+        path: '/admin',
+        element: <AdminPanel />
       }
     ]
   },

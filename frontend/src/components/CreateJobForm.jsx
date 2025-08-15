@@ -54,71 +54,99 @@ const CreateJobForm = ({ contract, signer }) => {
 
     return (
         <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
-            {({ setFieldValue }) => {
-                {/* console.log("Errors:", errors); */ }
-                return (
-                    <Form style={{ display: "flex", flexDirection: "column" }}>
-                        <label className={` font-semibold text-lg`}>Title</label>
+            {({ setFieldValue }) => (
+                <Form className="flex flex-col gap-5 p-6 max-w-full min-w-xl mx-auto bg-gray-900 rounded-xl shadow-lg">
+                    {/* Title */}
+                    <div className="flex flex-col">
+                        <label className="text-lg font-semibold text-gray-300">Title</label>
                         <Field
                             name="title"
                             type="text"
-                            className={`border-2 border-black mb-4 mt-1.5 rounded-md px-2 h-8`}
-                            placeholder="Please Enter Title"
+                            className="mt-2 h-10 px-3 rounded-md bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="Enter title"
                         />
-                        <ErrorMessage name="title" component="div" style={{ color: "red" }} className={` relative -top-3`} />
+                        <ErrorMessage name="title" component="div" className="text-red-500 text-sm mt-1" />
+                    </div>
 
-                        <label className={` font-semibold text-lg`}>Budget (in ETH)</label>
+                    {/* Budget */}
+                    <div className="flex flex-col">
+                        <label className="text-lg font-semibold text-gray-300">Budget (in ETH)</label>
                         <Field
                             name="budget"
                             type="number"
-                            className={`border-2 border-black mb-4 mt-1.5 rounded-md px-2 h-8`}
-                            placeholder="Please Enter Budget"
+                            className="mt-2 h-10 px-3 rounded-md bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="Enter budget"
                         />
-                        <ErrorMessage name="budget" component="div" style={{ color: "red" }} className={` relative -top-3`} />
+                        <ErrorMessage name="budget" component="div" className="text-red-500 text-sm mt-1" />
+                    </div>
 
-                        <label className={` font-semibold text-lg`}>Description</label>
+                    {/* Description */}
+                    <div className="flex flex-col">
+                        <label className="text-lg font-semibold text-gray-300">Description</label>
                         <Field
                             as="textarea"
                             name="description"
-                            className={`border-2 border-black mb-4 mt-1.5 rounded-md px-2`}
-                            placeholder="Please Enter Description"
+                            rows={4}
+                            className="mt-2 px-3 py-2 rounded-md bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="Describe the job..."
                         />
-                        <ErrorMessage name="description" component="div" style={{ color: "red" }} className={` relative -top-3`} />
+                        <ErrorMessage name="description" component="div" className="text-red-500 text-sm mt-1" />
+                    </div>
 
-                        <label className={` font-semibold text-lg`}>Tech Stack</label>
+                    {/* Tech Stack */}
+                    <div className="flex flex-col">
+                        <label className="text-lg font-semibold text-gray-300">Tech Stack</label>
                         <Field
                             name="stack"
                             type="text"
-                            className={`border-2 border-black mb-4 mt-1.5 rounded-md px-2 h-8`}
-                            placeholder="Please Enter Tech Stack"
+                            className="mt-2 h-10 px-3 rounded-md bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="Enter tech stack"
                         />
-                        <ErrorMessage name="stack" component="div" style={{ color: "red" }} className={` relative -top-3`} />
+                        <ErrorMessage name="stack" component="div" className="text-red-500 text-sm mt-1" />
+                    </div>
 
-                        <label className={` font-semibold text-lg`}>Links (portfolio/github/docs)</label>
+                    {/* Links */}
+                    <div className="flex flex-col">
+                        <label className="text-lg font-semibold text-gray-300">Links (Portfolio/GitHub/Docs)</label>
                         <Field
                             name="links"
                             type="url"
-                            className={`border-2 border-black mb-4 mt-1.5 rounded-md px-2 h-8`}
-                            placeholder="Please Enter Necessary Links"
+                            className="mt-2 h-10 px-3 rounded-md bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="Enter relevant links"
                         />
-                        <ErrorMessage name="links" component="div" style={{ color: "red" }} className={` relative -top-3`} />
+                        <ErrorMessage name="links" component="div" className="text-red-500 text-sm mt-1" />
+                    </div>
 
-                        <label className={` font-semibold text-lg`}>{`Image (Optional)`}</label>
+                    {/* Image Upload */}
+                    <div className="flex flex-col">
+                        <label className="text-lg font-semibold text-gray-300">Image (Optional)</label>
                         <input
                             name="image"
                             type="file"
                             accept="image/*"
                             onChange={(e) => setFieldValue("image", e.currentTarget.files[0])}
-                            className={`border-2 border-black mb-4 mt-1.5 rounded-md file:bg-amber-400 file:border-0 file:p-2 file:rounded-sm cursor-pointer file:cursor-pointer file:font-semibold`}
+                            className="mt-2 block w-full text-sm text-gray-300
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-md file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-purple-600 file:text-white
+                            hover:file:bg-purple-700 cursor-pointer"
                         />
+                    </div>
 
-                        <div className={` flex justify-center`}>
-                            <button type="submit" className={` border-0 bg-purple-700 text-white w-fit p-2 rounded-md cursor-pointer`}>Create Job</button>
-                        </div>
-                    </Form>
-                )
-            }}
+                    {/* Submit Button */}
+                    <div className="flex justify-center">
+                        <button
+                            type="submit"
+                            className="px-6 py-2 bg-purple-700 hover:bg-purple-800 transition-colors duration-300 rounded-md text-white font-semibold"
+                        >
+                            Create Job
+                        </button>
+                    </div>
+                </Form>
+            )}
         </Formik>
+
     );
 };
 

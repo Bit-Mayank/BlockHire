@@ -16,6 +16,7 @@ function Profile() {
     const [assignedJobs, setAssignedJobs] = useState([]);
     const [pendingJobs, setPendingJobs] = useState([]);
     const [completedJobs, setCompletedJobs] = useState([]);
+    const [disputedJobs, setDisputedJobs] = useState([]);
     const navigate = useNavigate();
 
     const handleRegister = async () => {
@@ -76,7 +77,8 @@ function Profile() {
                 const assigned = [];
                 const pending = [];
                 const closed = [];
-                const bidded = [];
+                // const bidded = [];
+                const disputed = [];
 
                 postedJobs?.forEach((job) => {
                     const status = getStatus(job.status);
@@ -85,16 +87,18 @@ function Profile() {
                     else if (status === "In Progress") assigned.push(job);
                     else if (status === "Submitted") pending.push(job);
                     else if (status === "Closed") closed.push(job);
+                    else if (status === "Disputed") disputed.push(job);
                 });
 
                 // biddedJobs?.forEach((job) => { bidded.push(job) });
 
-                console.log(bidded)
+                // console.log(bidded)
 
                 setOpenJobs(open);
                 setAssignedJobs(assigned);
                 setPendingJobs(pending);
                 setCompletedJobs(closed);
+                setDisputedJobs(disputed);
                 // setBiddedJobs(bidded)
             } catch (err) {
                 console.error("Profile Page: fetchJobs: ", err);
@@ -183,6 +187,18 @@ function Profile() {
                                                 <div className="text-xl font-semibold mb-2">Jobs Completed by User:</div>
                                                 <div className="grid grid-cols-3 gap-2">
                                                     {completedJobs.map((job) => (
+                                                        <JobCard key={job.jobId} job={job} />
+                                                    )
+                                                    )}
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {disputedJobs.length > 0 && (
+                                            <>
+                                                <div className="text-xl font-semibold mb-2">Disputed Jobs:</div>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    {disputedJobs.map((job) => (
                                                         <JobCard key={job.jobId} job={job} />
                                                     )
                                                     )}

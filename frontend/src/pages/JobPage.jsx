@@ -8,10 +8,17 @@ import { getStatus } from '../utils/jobUtils';
 function JobPage() {
     const { jobId } = useParams();
     const [job, setJob] = useState(null);
-    const { contract, signer, account } = useContext(ChainContext);
+    const { contract, signer, account, admin } = useContext(ChainContext);
     const [bidAmount, setBidAmount] = useState('');
     const [bids, setBids] = useState([]);
     const [loading, setIsLoading] = useState(false);
+    const [submittedWork, setSubmittedWork] = useState("");
+    // At the top of your React component
+    const [selectedWinner, setSelectedWinner] = useState(null); // null means nothing is selected initially
+
+    const handleSelectionChange = (event) => {
+        setSelectedWinner(event.target.value);
+    };
 
     const handleSelectFreelancer = async (bidderAddress) => {
         try {
@@ -70,6 +77,68 @@ function JobPage() {
             alert("Something went wrong with withdraw");
             console.error("BidList: handleWithdraw: ", e)
         }
+    };
+
+    const handleSubmitWork = async () => {
+        try {
+            setIsLoading(true);
+            const response = await contract.connect(signer).submitWork(jobId, submittedWork)
+            await response.wait();
+
+            alert("Work Submitted successfully");
+            setIsLoading(false);
+        } catch (error) {
+            setIsLoading(false);
+            alert("Something Went Wrong");
+            console.error("Job Page: handleSubmitWork: ", error);
+        }
+    }
+
+    const handleApprove = async () => {
+        try {
+            setIsLoading(true);
+            const response = await contract.connect(signer).approveWork(jobId);
+            await response.wait();
+
+            setIsLoading(false);
+        } catch (error) {
+            setIsLoading(false);
+            alert("Something Went Wrong");
+            console.error("JobPage: handleApprove: ", error);
+        }
+    }
+
+    const handleDispute = async () => {
+        try {
+            setIsLoading(true);
+            const response = await contract.connect(signer).raiseDispute(jobId);
+            await response.wait();
+
+            setIsLoading(false);
+        } catch (error) {
+            setIsLoading(false);
+            alert("Something Went Wrong");
+            console.error("JobPage: handleDispute: ", error);
+        }
+    }
+
+    const handleResolveDispute = async () => {
+        try {
+            if (!selectedWinner) {
+                alert("Please Select any person to pay");
+                return;
+            }
+
+            setIsLoading(true);
+            const releaseToFreelancer = selectedWinner === "freelancer";
+            const response = await contract.connect(signer).ownerResolveDispute(jobId, releaseToFreelancer);
+            await response.wait();
+            setIsLoading(false);
+        } catch (err) {
+            setIsLoading(false);
+            alert("Either you are not the owner or Something went wrong");
+            console.error("JobPage: handleResolveDispute: ", err);
+        }
     }
 
     useEffect(() => {
@@ -100,6 +169,7 @@ function JobPage() {
                     freelancer: fetchedJob.freelancer,
                     specCID: cid,
                     client: fetchedJob.client,
+                    submissionCID: fetchedJob.submissionCID,
                     metadata,
                     imageUrl,
                 };
@@ -172,6 +242,22 @@ function JobPage() {
                                                 </a>
                                             </p>
                                         )}
+
+                                        {
+                                            (job.status === "Submitted" || job.status === "Disputed") && (job.client?.toLowerCase() === account.toLowerCase() || job.freelancer?.toLowerCase() === account.toLowerCase()) && (
+                                                <p>
+                                                    <span className="text-gray-400 font-medium text-2xl">Links:</span>{" "}
+                                                    <a
+                                                        href={job.submissionCID}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="text-blue-400 underline break-all text-xl"
+                                                    >
+                                                        {job.submissionCID}
+                                                    </a>
+                                                </p>
+                                            )
+                                        }
                                     </div>
                                 )}
                             </div>
@@ -204,6 +290,115 @@ function JobPage() {
                                 >
                                     Place Bid
                                 </button>
+                            </div>
+                        )}
+
+                        {job.status === "In Progress" && job.freelancer?.toLowerCase() === account?.toLowerCase() && (
+                            <div className="mt-4 space-y-2 p-4 flex flex-col">
+                                <input
+                                    type="text"
+                                    value={submittedWork}
+                                    onChange={(e) => setSubmittedWork(e.target.value)}
+                                    placeholder="Enter link of your work to submit"
+                                    className="w-full px-3 py-2 rounded border border-gray-300 placeholder:text-gray-400 text-white bg-zinc-900"
+                                />
+                                <button
+                                    onClick={handleSubmitWork}
+                                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded cursor-pointer disabled:bg-blue-400"
+                                    disabled={loading}
+                                >
+                                    Submit Work
+                                </button>
+                            </div>
+                        )}
+
+                        {job.status === "Submitted" && (
+                            <div className="mt-4 space-y-2 p-4 flex flex-col">
+                                {
+                                    job.client?.toLowerCase() === account?.toLowerCase() && (
+                                        <button
+                                            onClick={handleApprove}
+                                            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded cursor-pointer disabled:bg-blue-400"
+                                            disabled={loading}
+                                        >
+                                            Approve Work
+                                        </button>
+                                    )
+                                }
+                                {
+                                    (job.freelancer?.toLowerCase() === account?.toLowerCase() || job.client?.toLowerCase() === account?.toLowerCase()) && (
+                                        <button
+                                            onClick={handleDispute}
+                                            className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded cursor-pointer disabled:bg-red-400"
+                                            disabled={loading}
+                                        >
+                                            Raise Dispute
+                                        </button>
+                                    )
+                                }
+
+                            </div>
+                        )}
+
+                        {job.status === "Disputed" && (
+                            <div className="mt-4 space-y-2 p-4 flex flex-col">
+                                {admin?.toLowerCase() === account?.toLowerCase() && (
+                                    <div>
+                                        <div className="mb-4">
+                                            <h4 className="font-semibold text-white text-xl mb-2">Resolve Dispute In Favor Of:</h4>
+                                            <div className="flex gap-2">
+
+                                                {/* Option 1: The Client */}
+                                                <div className="flex items-center">
+                                                    <input
+                                                        type="radio"
+                                                        id="payClient"
+                                                        name="disputeWinner"
+                                                        value="client"
+                                                        className="h-4 w-4 cursor-pointer"
+                                                        onChange={handleSelectionChange}
+                                                        checked={selectedWinner === 'client'}
+                                                    />
+                                                    <label
+                                                        htmlFor="payClient"
+                                                        className={`ml-2 cursor-pointer text-[1.1rem] font-medium ${selectedWinner === 'client' ? 'text-red-500' : 'text-white'
+                                                            }`}
+                                                    >
+                                                        The Client
+                                                    </label>
+                                                </div>
+
+                                                {/* Option 2: The Freelancer */}
+                                                <div className="flex items-center">
+                                                    <input
+                                                        type="radio"
+                                                        id="payFreelancer"
+                                                        name="disputeWinner"
+                                                        value="freelancer"
+                                                        className="h-4 w-4 cursor-pointer"
+                                                        onChange={handleSelectionChange}
+                                                        checked={selectedWinner === 'freelancer'}
+                                                    />
+                                                    <label
+                                                        htmlFor="payFreelancer"
+                                                        className={`ml-2 cursor-pointer text-[1.1rem] font-medium ${selectedWinner === 'freelancer' ? 'text-red-500' : 'text-white'
+                                                            }`}
+                                                    >
+                                                        The Freelancer
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={handleResolveDispute}
+                                            className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded cursor-pointer disabled:bg-green-400"
+                                            disabled={loading || !selectedWinner} // Also disable button if no selection is made
+                                        >
+                                            Resolve Dispute
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
 

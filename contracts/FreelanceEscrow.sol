@@ -343,6 +343,28 @@ contract FreelanceEscrow is ReentrancyGuard {
         return openJobs;
     }
 
+    function listDisputedJobs() external view returns (Job[] memory) {
+        // First pass: count the number of open jobs
+        uint256 disputedCount = 0;
+        for (uint256 jobId = 1; jobId <= jobCount; jobId++) {
+            if (jobs[jobId].status == JobStatus.Disputed) {
+                disputedCount++;
+            }
+        }
+
+        // Second pass: populate the array
+        Job[] memory disputedJobs = new Job[](disputedCount);
+        uint256 index = 0;
+        for (uint256 jobId = 1; jobId <= jobCount; jobId++) {
+            if (jobs[jobId].status == JobStatus.Disputed) {
+                disputedJobs[index] = jobs[jobId];
+                index++;
+            }
+        }
+
+        return disputedJobs;
+    }
+
     function getJobsByIds(
         uint256[] memory ids
     ) public view returns (Job[] memory) {

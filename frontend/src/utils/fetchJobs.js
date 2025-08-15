@@ -8,6 +8,8 @@ export const fetchJobs = async (jobStatus, contract) => {
 
         if (jobStatus === "Open") {
             Jobs = await contract.listOpenJobs();
+        } else if (jobStatus === "Disputed") {
+            Jobs = await contract.listDisputedJobs();
         }
 
         const jobDetails = await Promise.all(

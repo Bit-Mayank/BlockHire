@@ -11,6 +11,7 @@ export const ChainContext = createContext({
   signer: null,
   contract: null,
   account: "",
+  admin: "",
   isRegistered: false
 });
 
@@ -21,6 +22,7 @@ export function ChainContextProvider({ children }) {
   const [contract, setContract] = useState(null);
   const [account, setAccount] = useState("");
   const [isRegistered, setIsRegistered] = useState(false);
+  const [admin, setAdmin] = useState("");
 
   const loadBlockchain = useCallback(async () => {
     if (!window.ethereum) {
@@ -41,6 +43,14 @@ export function ChainContextProvider({ children }) {
     setSigner(signer);
     setContract(escrow);
     setAccount(accounts[0]);
+
+    try {
+      const res = await escrow.owner();
+      // console.log("Admin:", res)
+      setAdmin(res);
+    } catch (e) {
+      console.error("ChainContextProvider: Setting Admin: ", e);
+    }
 
     // ✅ Auto-register if not registered
     try {
@@ -81,7 +91,7 @@ export function ChainContextProvider({ children }) {
 
 
   return (
-    <ChainContext.Provider value={{ provider, signer, contract, account, loadBlockchain, isRegistered, setIsRegistered }}>
+    <ChainContext.Provider value={{ provider, signer, contract, account, loadBlockchain, isRegistered, setIsRegistered, admin }}>
       {children}
     </ChainContext.Provider>
   )
