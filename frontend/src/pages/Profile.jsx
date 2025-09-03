@@ -65,7 +65,7 @@ function Profile() {
 
         const fetchJobs = async () => {
             if (!profile) return;
-
+        
             try {
                 const postedJobs = await contract.getJobsByIds([...profile.jobsPosted]);
                 const biddedJobs = await contract.getJobsByIds([...profile.jobsBidOn]);
