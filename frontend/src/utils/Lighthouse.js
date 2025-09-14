@@ -29,3 +29,20 @@ export const uploadJobFolderToLighthouse = async (metadata, imageFile) => {
 
     return { metadataCID, imageCID };
 };
+
+export const fetchFromLighthouse = async (cid) => {
+    if (!cid || cid.trim() === "") {
+        return null;
+    }
+
+    try {
+        const response = await fetch(`https://gateway.lighthouse.storage/ipfs/${cid}`);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch data from IPFS: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching from IPFS:", error);
+        return null;
+    }
+};

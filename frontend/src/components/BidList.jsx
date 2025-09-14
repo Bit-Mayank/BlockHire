@@ -4,7 +4,7 @@ import { ChainContext } from '../context/ChainContextProvider';
 import BidCard from './BidCard';
 
 
-const BidList = ({ bids, jobClient, selectFreelancer, loading, status, handleWithdraw }) => {
+const BidList = ({ bids, jobClient, jobFreelancer, selectFreelancer, selectFreelancerLoading, selectedBidderAddress, withdrawLoading, status, handleWithdraw }) => {
     const { account } = useContext(ChainContext);
     const [userBid, setUserBid] = useState(null);
 
@@ -30,8 +30,11 @@ const BidList = ({ bids, jobClient, selectFreelancer, loading, status, handleWit
                     <BidCard
                         bid={userBid}
                         jobClient={jobClient}
+                        jobFreelancer={jobFreelancer}
                         selectFreelancer={selectFreelancer}
-                        loading={loading}
+                        selectFreelancerLoading={selectFreelancerLoading}
+                        selectedBidderAddress={selectedBidderAddress}
+                        withdrawLoading={withdrawLoading}
                         status={status}
                         handleWithdraw={handleWithdraw}
                     />
@@ -44,8 +47,11 @@ const BidList = ({ bids, jobClient, selectFreelancer, loading, status, handleWit
                             key={index}
                             bid={bid}
                             jobClient={jobClient}
+                            jobFreelancer={jobFreelancer}
                             selectFreelancer={selectFreelancer}
-                            loading={loading}
+                            selectFreelancerLoading={selectFreelancerLoading}
+                            selectedBidderAddress={selectedBidderAddress}
+                            withdrawLoading={withdrawLoading}
                             status={status}
                             handleWithdraw={handleWithdraw}
                         />

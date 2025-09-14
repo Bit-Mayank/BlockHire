@@ -1,11 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { ChainContext } from "../context/ChainContextProvider";
 import { parseEther } from "ethers";
 import { uploadJobFolderToLighthouse } from "../utils/Lighthouse";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "../utils/useToast";
+import LoadingSpinner from "./LoadingSpinner";
 
 const CreateJobForm = ({ contract, signer }) => {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const navigate = useNavigate();
+    const { showSuccess, showError } = useToast();
 
 
     const initialValues = {
@@ -29,7 +35,8 @@ const CreateJobForm = ({ contract, signer }) => {
 
     const handleSubmit = async (values, { resetForm }) => {
         try {
-            console.log("Clicked")
+            setIsSubmitting(true);
+
             const jobData = {
                 title: values.title,
                 description: values.description,
@@ -43,12 +50,20 @@ const CreateJobForm = ({ contract, signer }) => {
                 const budget = parseEther(values.budget.toString());
                 const tx = await contract.connect(signer).createJob(values.title, budget, metadataCID);
                 await tx.wait();
-                alert("Job created successfully!");
+
+                showSuccess("Job created successfully!");
                 resetForm();
+
+                // Navigate to home page after successful creation
+                setTimeout(() => {
+                    navigate('/');
+                }, 1500);
             }
         } catch (err) {
             console.error(err);
-            alert("Error creating job");
+            showError("Error creating job. Please try again.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -138,9 +153,14 @@ const CreateJobForm = ({ contract, signer }) => {
                     <div className="flex justify-center">
                         <button
                             type="submit"
-                            className="px-6 py-2 bg-purple-700 hover:bg-purple-800 transition-colors duration-300 rounded-md text-white font-semibold"
+                            disabled={isSubmitting}
+                            className={`px-6 py-2 font-semibold rounded-md text-white transition-colors duration-300 flex items-center gap-2 ${isSubmitting
+                                    ? 'bg-purple-500 cursor-not-allowed'
+                                    : 'bg-purple-700 hover:bg-purple-800'
+                                }`}
                         >
-                            Create Job
+                            {isSubmitting && <LoadingSpinner size="w-4 h-4" />}
+                            {isSubmitting ? 'Creating Job...' : 'Create Job'}
                         </button>
                     </div>
                 </Form>

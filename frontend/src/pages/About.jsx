@@ -79,14 +79,14 @@ function About() {
                             <div className="flex-shrink-0 w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center text-2xl font-bold text-red-600 mr-4">H</div>
                             <div>
                                 <div className="flex items-center gap-2">
-                                <h3 className="text-xl font-bold text-yellow-400">Harsh</h3>
-                                <a href="https://www.linkedin.com/in/harsh-cse/" target="_blank" rel="noopener noreferrer">
-                                    <Linkedin className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
-                                </a>
-                                <a href="https://github.com/harsh-c-s-e" target="_blank" rel="noopener noreferrer">
-                                    <Github className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
-                                </a>
-                            </div>
+                                    <h3 className="text-xl font-bold text-yellow-400">Harsh</h3>
+                                    <a href="https://www.linkedin.com/in/harsh-cse/" target="_blank" rel="noopener noreferrer">
+                                        <Linkedin className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
+                                    </a>
+                                    <a href="https://github.com/harsh-c-s-e" target="_blank" rel="noopener noreferrer">
+                                        <Github className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
+                                    </a>
+                                </div>
                                 <p className="text-gray-200">Blockchain developer and architect. Harsh led the smart contract design and security, ensuring trustless transactions and robust escrow logic.</p>
                             </div>
                         </div>
@@ -94,14 +94,14 @@ function About() {
                             <div className="flex-shrink-0 w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center text-2xl font-bold text-red-600 mr-4">MK</div>
                             <div>
                                 <div className="flex items-center gap-2">
-                                <h3 className="text-xl font-bold text-yellow-400">Mayank Kushwah</h3>
-                                <a href="https://www.linkedin.com/in/k-mayank/" target="_blank" rel="noopener noreferrer">
-                                    <Linkedin className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
-                                </a>
-                                <a href="https://github.com/Bit-Mayank" target="_blank" rel="noopener noreferrer">
-                                    <Github className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
-                                </a>
-                            </div>
+                                    <h3 className="text-xl font-bold text-yellow-400">Mayank Kushwah</h3>
+                                    <a href="https://www.linkedin.com/in/k-mayank/" target="_blank" rel="noopener noreferrer">
+                                        <Linkedin className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
+                                    </a>
+                                    <a href="https://github.com/Bit-Mayank" target="_blank" rel="noopener noreferrer">
+                                        <Github className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
+                                    </a>
+                                </div>
                                 <p className="text-gray-200">Frontend and UX specialist. Mayank crafted the user experience and interface, making BlockHire intuitive and visually appealing for all users.</p>
                             </div>
                         </div>
@@ -109,28 +109,28 @@ function About() {
                             <div className="flex-shrink-0 w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center text-2xl font-bold text-red-600 mr-4">PS</div>
                             <div>
                                 <div className="flex items-center gap-2">
-                                <h3 className="text-xl font-bold text-yellow-400">Praduin sharma</h3>
-                                <a href="https://www.linkedin.com/in/praduin-sharma-52a606257/" target="_blank" rel="noopener noreferrer">
-                                    <Linkedin className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
-                                </a>
-                                <a href="https://github.com/praduin" target="_blank" rel="noopener noreferrer">
-                                    <Github className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
-                                </a>
-                            </div>
+                                    <h3 className="text-xl font-bold text-yellow-400">Praduin sharma</h3>
+                                    <a href="https://www.linkedin.com/in/praduin-sharma-52a606257/" target="_blank" rel="noopener noreferrer">
+                                        <Linkedin className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
+                                    </a>
+                                    <a href="https://github.com/praduin" target="_blank" rel="noopener noreferrer">
+                                        <Github className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
+                                    </a>
+                                </div>
                                 <p className="text-gray-200">Full-stack developer and mentor. Praduin provided technical guidance, code reviews, and helped integrate decentralized storage and dispute resolution features.</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                
+
                 {/* Call to Action */}
                 <div className="w-full flex flex-col items-center mt-4">
                     <span className="text-xl text-gray-300 mb-2">Ready to get started?</span>
                     <a href="/" className="bg-yellow-400 text-red-600 font-bold px-6 py-2 rounded-lg shadow hover:bg-yellow-300 transition">Go to Home</a>
                 </div>
             </div>
-    </div>
+        </div>
     );
 }
 

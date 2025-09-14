@@ -148,6 +148,12 @@ contract FreelanceEscrow is ReentrancyGuard {
         emit UserRegistered(msg.sender);
     }
 
+    /// @notice Update user profile CID
+    function updateProfileCID(string calldata _profileCID) external {
+        require(userProfiles[msg.sender].isRegistered, "User not registered");
+        userProfiles[msg.sender].profileCID = _profileCID;
+    }
+
     /// @notice Freelancers place bids (optionally with refundable deposit)
     function placeBid(uint256 jobId) external payable nonReentrant {
         Job storage J = jobs[jobId];
@@ -220,10 +226,14 @@ contract FreelanceEscrow is ReentrancyGuard {
         require(J.status == JobStatus.Submitted, "Work not submitted");
 
         uint256 payout = J.escrow;
+        uint256 bidRefund = bidAmounts[id][J.freelancer];
+        uint256 totalPayout = payout + bidRefund;
+
         J.escrow = 0;
+        bidAmounts[id][J.freelancer] = 0; // Prevent double spending
         J.status = JobStatus.Approved;
 
-        (bool ok, ) = payable(J.freelancer).call{value: payout}("");
+        (bool ok, ) = payable(J.freelancer).call{value: totalPayout}("");
         require(ok, "Transfer failed");
 
         userProfiles[J.client].totalSpent += J.budget;
@@ -233,6 +243,9 @@ contract FreelanceEscrow is ReentrancyGuard {
         J.status = JobStatus.Closed;
 
         emit JobApproved(id, payout);
+        if (bidRefund > 0) {
+            emit BidRefunded(id, J.freelancer, bidRefund);
+        }
     }
 
     /// @notice Either party can raise a dispute after submission
@@ -291,11 +304,19 @@ contract FreelanceEscrow is ReentrancyGuard {
         J.escrow = 0;
 
         if (releaseToFreelancer) {
-            (bool ok, ) = payable(J.freelancer).call{value: amount}("");
+            uint256 bidRefund = bidAmounts[id][J.freelancer];
+            uint256 totalPayout = amount + bidRefund;
+            bidAmounts[id][J.freelancer] = 0; // Prevent double spending
+
+            (bool ok, ) = payable(J.freelancer).call{value: totalPayout}("");
             require(ok, "Transfer failed");
 
             userProfiles[J.freelancer].totalEarned += J.budget;
             userProfiles[J.freelancer].jobsCompleted.push(id);
+
+            if (bidRefund > 0) {
+                emit BidRefunded(id, J.freelancer, bidRefund);
+            }
         } else {
             (bool ok, ) = payable(J.client).call{value: amount}("");
             require(ok, "Refund failed");

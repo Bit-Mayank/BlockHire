@@ -4,6 +4,8 @@ import { formatEther, parseEther } from 'ethers';
 import { ChainContext } from '../context/ChainContextProvider';
 import BidList from '../components/BidList';
 import { getStatus } from '../utils/jobUtils';
+import { useToast } from '../utils/useToast';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 function JobPage() {
     const { jobId } = useParams();
@@ -11,8 +13,19 @@ function JobPage() {
     const { contract, signer, account, admin } = useContext(ChainContext);
     const [bidAmount, setBidAmount] = useState('');
     const [bids, setBids] = useState([]);
-    const [loading, setIsLoading] = useState(false);
     const [submittedWork, setSubmittedWork] = useState("");
+    const { showSuccess, showError } = useToast();
+
+    // Separate loading states for different actions
+    const [placeBidLoading, setPlaceBidLoading] = useState(false);
+    const [selectFreelancerLoading, setSelectFreelancerLoading] = useState(false);
+    const [withdrawLoading, setWithdrawLoading] = useState(false);
+    const [submitWorkLoading, setSubmitWorkLoading] = useState(false);
+    const [approveWorkLoading, setApproveWorkLoading] = useState(false);
+    const [disputeLoading, setDisputeLoading] = useState(false);
+    const [resolveDisputeLoading, setResolveDisputeLoading] = useState(false);
+    const [selectedBidderAddress, setSelectedBidderAddress] = useState(null); // Track which bidder is being selected
+
     // At the top of your React component
     const [selectedWinner, setSelectedWinner] = useState(null); // null means nothing is selected initially
 
@@ -22,26 +35,34 @@ function JobPage() {
 
     const handleSelectFreelancer = async (bidderAddress) => {
         try {
-            setIsLoading(true)
+            setSelectFreelancerLoading(true);
+            setSelectedBidderAddress(bidderAddress);
             const tx = await contract.selectFreelancer(jobId, bidderAddress, {
                 value: job.budget.toString()
             });
             await tx.wait();
-            alert("Freelancer selected!");
-            setIsLoading(false)
+            showSuccess("Freelancer selected successfully!");
+
+            // Refetch job and bids to reflect status change (Open -> In Progress)
+            await refetchJobData();
+
+            setSelectFreelancerLoading(false);
+            setSelectedBidderAddress(null);
         } catch (err) {
-            setIsLoading(false)
+            setSelectFreelancerLoading(false);
+            setSelectedBidderAddress(null);
+            showError("Failed to select freelancer. Please try again.");
             console.error("Failed to select freelancer:", err);
         }
     };
 
     const handlePlaceBid = async () => {
         if (!bidAmount || isNaN(Number(bidAmount)) || Number(bidAmount) <= 0) {
-            alert('Please enter a valid bid amount.');
+            showError('Please enter a valid bid amount.');
             return;
         }
 
-        setIsLoading(true);
+        setPlaceBidLoading(true);
 
         try {
             const tx = await contract.connect(signer).placeBid(Number(jobId), {
@@ -49,75 +70,95 @@ function JobPage() {
             });
             const receipt = await tx.wait();
 
-            alert('Bid placed successfully!');
             if (receipt.status === 1) {
+                showSuccess('Bid placed successfully!');
                 setBidAmount('');
+
+                // Refetch bids to show the new bid
+                await fetchBids();
             } else {
-                alert('Transaction failed.');
+                showError('Transaction failed.');
             }
-            setIsLoading(false)
+            setPlaceBidLoading(false);
         } catch (err) {
             console.error('Failed to place bid:', err);
-            setIsLoading(false)
-            alert('Transaction failed: ' + (err.reason || err.message || 'Unknown error'));
+            setPlaceBidLoading(false);
+            showError('Transaction failed: ' + (err.reason || err.message || 'Unknown error'));
         }
     };
 
     const handleWithdraw = async () => {
         try {
-
-            setIsLoading(true);
+            setWithdrawLoading(true);
             const response = await contract.connect(signer).refundBid(jobId);
             await response.wait();
 
-            alert("Withdrawl Successful");
-            setIsLoading(false);
+            showSuccess("Withdrawal successful!");
+
+            // Refetch bids to remove the withdrawn bid
+            await fetchBids();
+
+            setWithdrawLoading(false);
         } catch (e) {
-            setIsLoading(false);
-            alert("Something went wrong with withdraw");
+            setWithdrawLoading(false);
+            showError("Something went wrong with withdrawal. Please try again.");
             console.error("BidList: handleWithdraw: ", e)
         }
     };
 
     const handleSubmitWork = async () => {
         try {
-            setIsLoading(true);
+            setSubmitWorkLoading(true);
             const response = await contract.connect(signer).submitWork(jobId, submittedWork)
             await response.wait();
 
-            alert("Work Submitted successfully");
-            setIsLoading(false);
+            showSuccess("Work submitted successfully!");
+
+            // Refetch job to reflect status change (In Progress -> Submitted)
+            await refetchJobData();
+
+            setSubmitWorkLoading(false);
         } catch (error) {
-            setIsLoading(false);
-            alert("Something Went Wrong");
+            setSubmitWorkLoading(false);
+            showError("Something went wrong. Please try again.");
             console.error("Job Page: handleSubmitWork: ", error);
         }
     }
 
     const handleApprove = async () => {
         try {
-            setIsLoading(true);
+            setApproveWorkLoading(true);
             const response = await contract.connect(signer).approveWork(jobId);
             await response.wait();
 
-            setIsLoading(false);
+            showSuccess("Work approved successfully!");
+
+            // Refetch job to reflect status change (Submitted -> Completed)
+            await refetchJobData();
+
+            setApproveWorkLoading(false);
         } catch (error) {
-            setIsLoading(false);
-            alert("Something Went Wrong");
+            setApproveWorkLoading(false);
+            showError("Something went wrong. Please try again.");
             console.error("JobPage: handleApprove: ", error);
         }
     }
 
     const handleDispute = async () => {
         try {
-            setIsLoading(true);
+            setDisputeLoading(true);
             const response = await contract.connect(signer).raiseDispute(jobId);
             await response.wait();
 
-            setIsLoading(false);
+            showSuccess("Dispute raised successfully!");
+
+            // Refetch job to reflect status change (-> Disputed)
+            await refetchJobData();
+
+            setDisputeLoading(false);
         } catch (error) {
-            setIsLoading(false);
-            alert("Something Went Wrong");
+            setDisputeLoading(false);
+            showError("Something went wrong. Please try again.");
             console.error("JobPage: handleDispute: ", error);
         }
     }
@@ -125,71 +166,91 @@ function JobPage() {
     const handleResolveDispute = async () => {
         try {
             if (!selectedWinner) {
-                alert("Please Select any person to pay");
+                showError("Please select a person to pay");
                 return;
             }
 
-            setIsLoading(true);
+            setResolveDisputeLoading(true);
             const releaseToFreelancer = selectedWinner === "freelancer";
             const response = await contract.connect(signer).ownerResolveDispute(jobId, releaseToFreelancer);
             await response.wait();
-            setIsLoading(false);
+
+            showSuccess("Dispute resolved successfully!");
+
+            // Refetch job to reflect status change (Disputed -> Completed/Cancelled)
+            await refetchJobData();
+
+            setResolveDisputeLoading(false);
         } catch (err) {
-            setIsLoading(false);
-            alert("Either you are not the owner or Something went wrong");
+            setResolveDisputeLoading(false);
+            showError("Either you are not the owner or something went wrong");
             console.error("JobPage: handleResolveDispute: ", err);
         }
     }
 
-    useEffect(() => {
-        const fetchJob = async () => {
+    // Reusable function to fetch job details
+    const fetchJob = async () => {
+        try {
+            const fetchedJob = await contract.jobs(jobId);
+            const id = fetchedJob.jobId;
+            const cid = fetchedJob.specCID;
+            let metadata = {};
+            let imageUrl = '';
+
             try {
-                const fetchedJob = await contract.jobs(jobId);
-                const id = fetchedJob.jobId;
-                const cid = fetchedJob.specCID;
-                let metadata = {};
-                let imageUrl = '';
+                const metadataRes = await fetch(`https://gateway.lighthouse.storage/ipfs/${cid}`);
+                metadata = await metadataRes.json();
 
-                try {
-                    const metadataRes = await fetch(`https://gateway.lighthouse.storage/ipfs/${cid}`);
-                    metadata = await metadataRes.json();
-
-                    if (metadata.imageCID) {
-                        imageUrl = `https://gateway.lighthouse.storage/ipfs/${metadata.imageCID}`;
-                    }
-                } catch (e) {
-                    console.warn(`Could not load metadata from IPFS CID ${cid}`, e);
+                if (metadata.imageCID) {
+                    imageUrl = `https://gateway.lighthouse.storage/ipfs/${metadata.imageCID}`;
                 }
-
-                const jobDetails = {
-                    id: id.toString(),
-                    title: fetchedJob.title,
-                    budget: fetchedJob.budget.toString(),
-                    status: getStatus(fetchedJob.status),
-                    freelancer: fetchedJob.freelancer,
-                    specCID: cid,
-                    client: fetchedJob.client,
-                    submissionCID: fetchedJob.submissionCID,
-                    metadata,
-                    imageUrl,
-                };
-
-                setJob(jobDetails);
-            } catch (err) {
-                console.error('Failed to fetch job details', err);
+            } catch (e) {
+                console.warn(`Could not load metadata from IPFS CID ${cid}`, e);
             }
-        };
 
-        const fetchBids = async () => {
+            const jobDetails = {
+                id: id.toString(),
+                title: fetchedJob.title,
+                budget: fetchedJob.budget.toString(),
+                status: getStatus(fetchedJob.status),
+                freelancer: fetchedJob.freelancer,
+                specCID: cid,
+                client: fetchedJob.client,
+                submissionCID: fetchedJob.submissionCID,
+                metadata,
+                imageUrl,
+            };
+
+            setJob(jobDetails);
+        } catch (err) {
+            console.error('Failed to fetch job details', err);
+        }
+    };
+
+    // Reusable function to fetch bids
+    const fetchBids = async () => {
+        try {
             const jobBids = await contract.listBids(jobId);
             setBids(jobBids);
-        };
+        } catch (err) {
+            console.error('Failed to fetch bids', err);
+        }
+    };
 
+    // Function to refetch both job and bids after status changes
+    const refetchJobData = async () => {
+        if (contract && jobId) {
+            await Promise.all([fetchJob(), fetchBids()]);
+        }
+    };
+
+    useEffect(() => {
         if (contract && jobId) {
             fetchJob();
             fetchBids();
         }
-    }, [contract, jobId, loading]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [contract, jobId]);
 
     return (
         <div className="min-h-screen bg-gray-950 pb-16">
@@ -231,7 +292,7 @@ function JobPage() {
 
                                         {job.metadata.links && (
                                             <p>
-                                                <span className="text-gray-400 font-medium text-2xl">Links:</span>{" "}
+                                                <span className="text-gray-400 font-medium text-2xl">Work Link:</span>{" "}
                                                 <a
                                                     href={job.metadata.links}
                                                     target="_blank"
@@ -246,7 +307,7 @@ function JobPage() {
                                         {
                                             (job.status === "Submitted" || job.status === "Disputed") && (job.client?.toLowerCase() === account.toLowerCase() || job.freelancer?.toLowerCase() === account.toLowerCase()) && (
                                                 <p>
-                                                    <span className="text-gray-400 font-medium text-2xl">Links:</span>{" "}
+                                                    <span className="text-gray-400 font-medium text-2xl">Sumitted Work Link:</span>{" "}
                                                     <a
                                                         href={job.submissionCID}
                                                         target="_blank"
@@ -286,9 +347,14 @@ function JobPage() {
                                 />
                                 <button
                                     onClick={handlePlaceBid}
-                                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
+                                    disabled={placeBidLoading}
+                                    className={`w-full px-4 py-2 text-white rounded flex items-center justify-center gap-2 font-semibold transition-colors duration-300 ${placeBidLoading
+                                        ? 'bg-blue-500 cursor-not-allowed'
+                                        : 'bg-blue-600 hover:bg-blue-700'
+                                        }`}
                                 >
-                                    Place Bid
+                                    {placeBidLoading && <LoadingSpinner size="w-4 h-4" />}
+                                    {placeBidLoading ? 'Placing Bid...' : 'Place Bid'}
                                 </button>
                             </div>
                         )}
@@ -304,10 +370,14 @@ function JobPage() {
                                 />
                                 <button
                                     onClick={handleSubmitWork}
-                                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded cursor-pointer disabled:bg-blue-400"
-                                    disabled={loading}
+                                    className={`w-full px-4 py-2 text-white rounded cursor-pointer flex items-center justify-center gap-2 font-semibold transition-colors duration-300 ${submitWorkLoading
+                                        ? 'bg-blue-400 cursor-not-allowed'
+                                        : 'bg-blue-600 hover:bg-blue-700'
+                                        }`}
+                                    disabled={submitWorkLoading}
                                 >
-                                    Submit Work
+                                    {submitWorkLoading && <LoadingSpinner size="w-4 h-4" />}
+                                    {submitWorkLoading ? 'Submitting...' : 'Submit Work'}
                                 </button>
                             </div>
                         )}
@@ -318,10 +388,14 @@ function JobPage() {
                                     job.client?.toLowerCase() === account?.toLowerCase() && (
                                         <button
                                             onClick={handleApprove}
-                                            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded cursor-pointer disabled:bg-blue-400"
-                                            disabled={loading}
+                                            className={`w-full px-4 py-2 text-white rounded cursor-pointer flex items-center justify-center gap-2 font-semibold transition-colors duration-300 ${approveWorkLoading
+                                                ? 'bg-blue-400 cursor-not-allowed'
+                                                : 'bg-blue-600 hover:bg-blue-700'
+                                                }`}
+                                            disabled={approveWorkLoading}
                                         >
-                                            Approve Work
+                                            {approveWorkLoading && <LoadingSpinner size="w-4 h-4" />}
+                                            {approveWorkLoading ? 'Approving...' : 'Approve Work'}
                                         </button>
                                     )
                                 }
@@ -329,10 +403,14 @@ function JobPage() {
                                     (job.freelancer?.toLowerCase() === account?.toLowerCase() || job.client?.toLowerCase() === account?.toLowerCase()) && (
                                         <button
                                             onClick={handleDispute}
-                                            className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded cursor-pointer disabled:bg-red-400"
-                                            disabled={loading}
+                                            className={`w-full px-4 py-2 text-white rounded cursor-pointer flex items-center justify-center gap-2 font-semibold transition-colors duration-300 ${disputeLoading
+                                                ? 'bg-red-400 cursor-not-allowed'
+                                                : 'bg-red-600 hover:bg-red-700'
+                                                }`}
+                                            disabled={disputeLoading}
                                         >
-                                            Raise Dispute
+                                            {disputeLoading && <LoadingSpinner size="w-4 h-4" />}
+                                            {disputeLoading ? 'Raising Dispute...' : 'Raise Dispute'}
                                         </button>
                                     )
                                 }
@@ -392,10 +470,14 @@ function JobPage() {
 
                                         <button
                                             onClick={handleResolveDispute}
-                                            className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded cursor-pointer disabled:bg-green-400"
-                                            disabled={loading || !selectedWinner} // Also disable button if no selection is made
+                                            className={`w-full px-4 py-2 text-white rounded cursor-pointer flex items-center justify-center gap-2 font-semibold transition-colors duration-300 ${resolveDisputeLoading || !selectedWinner
+                                                ? 'bg-green-400 cursor-not-allowed'
+                                                : 'bg-green-600 hover:bg-green-700'
+                                                }`}
+                                            disabled={resolveDisputeLoading || !selectedWinner} // Also disable button if no selection is made
                                         >
-                                            Resolve Dispute
+                                            {resolveDisputeLoading && <LoadingSpinner size="w-4 h-4" />}
+                                            {resolveDisputeLoading ? 'Resolving...' : 'Resolve Dispute'}
                                         </button>
                                     </div>
                                 )}
@@ -407,8 +489,11 @@ function JobPage() {
                         <BidList
                             bids={bids}
                             jobClient={job.client}
+                            jobFreelancer={job.freelancer}
                             selectFreelancer={handleSelectFreelancer}
-                            loading={loading}
+                            selectFreelancerLoading={selectFreelancerLoading}
+                            selectedBidderAddress={selectedBidderAddress}
+                            withdrawLoading={withdrawLoading}
                             status={job.status}
                             handleWithdraw={handleWithdraw}
                         />

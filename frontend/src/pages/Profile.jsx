@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { formatEther } from 'ethers';
 import { ChainContext } from '../context/ChainContextProvider';
 import { getStatus } from '../utils/jobUtils';
+import { fetchFromLighthouse } from '../utils/Lighthouse';
 import JobCard from '../components/JobCard';
 
 function Profile() {
     const { contract, account, signer, isRegistered, setIsRegistered } = useContext(ChainContext);
     const [profile, setProfile] = useState(null);
+    const [profileMetadata, setProfileMetadata] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isRegistering, setIsRegistering] = useState(false);
     const [postedJobs, setPostedJobs] = useState([]);
@@ -50,6 +52,19 @@ function Profile() {
             setIsRegistered(true);
             const userProfile = await contract.getFullUserProfile(account);
             setProfile(userProfile);
+
+            // Fetch profile metadata from IPFS if profileCID exists
+            if (userProfile.profileCID && userProfile.profileCID.trim() !== "") {
+                try {
+                    const metadata = await fetchFromLighthouse(userProfile.profileCID);
+                    setProfileMetadata(metadata);
+                } catch (ipfsErr) {
+                    console.error("Failed to fetch profile metadata from IPFS:", ipfsErr);
+                    setProfileMetadata(null);
+                }
+            } else {
+                setProfileMetadata(null);
+            }
         } catch (err) {
             console.error("Failed to fetch user profile", err);
         } finally {
@@ -65,7 +80,7 @@ function Profile() {
 
         const fetchJobs = async () => {
             if (!profile) return;
-        
+
             try {
                 const postedJobs = await contract.getJobsByIds([...profile.jobsPosted]);
                 const biddedJobs = await contract.getJobsByIds([...profile.jobsBidOn]);
@@ -119,6 +134,49 @@ function Profile() {
                     isRegistered ? (
                         profile ? (
                             <div className="space-y-4 text-lg">
+                                {/* Profile Information Section */}
+                                {profileMetadata ? (
+                                    <div className="bg-zinc-700 p-6 rounded-lg mb-6">
+                                        <div className="flex items-start gap-4">
+                                            {profileMetadata.imageCID && (
+                                                <div className="w-20 h-20 rounded-full overflow-hidden bg-zinc-600 flex-shrink-0">
+                                                    <img
+                                                        src={`https://gateway.lighthouse.storage/ipfs/${profileMetadata.imageCID}`}
+                                                        alt="Profile"
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                        }}
+                                                    />
+                                                </div>
+                                            )}
+                                            <div className="flex-1">
+                                                {profileMetadata.displayName && (
+                                                    <h2 className="text-2xl font-bold text-yellow-400 mb-2">
+                                                        {profileMetadata.displayName}
+                                                    </h2>
+                                                )}
+                                                {profileMetadata.bio && (
+                                                    <p className="text-gray-300 leading-relaxed">
+                                                        {profileMetadata.bio}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-zinc-700 p-6 rounded-lg mb-6 text-center">
+                                        <p className="text-gray-400 mb-4">Complete your profile to let others know more about you!</p>
+                                        <button
+                                            className="bg-yellow-400 text-red-600 font-bold px-4 py-2 rounded-lg shadow hover:bg-yellow-300 transition"
+                                            onClick={() => navigate('/edit-profile')}
+                                        >
+                                            Complete Profile
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Statistics Section */}
                                 <div className="flex gap-4">
                                     <span className="font-medium">Total Spent:</span>
                                     <span>{formatEther(profile.totalSpent)} ETH</span>
