@@ -87,7 +87,7 @@ function About() {
                                         <Github className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
                                     </a>
                                 </div>
-                                <p className="text-gray-200">Blockchain developer and architect. Harsh led the smart contract design and security, ensuring trustless transactions and robust escrow logic.</p>
+                                <p className="text-gray-200">Frontend and UX specialist. Harsh crafted the user experience and interface, making BlockHire intuitive and visually appealing for all users.</p>
                             </div>
                         </div>
                         <div className="bg-zinc-900 p-4 rounded-xl shadow flex flex-col md:flex-row items-center md:items-start">
@@ -102,7 +102,7 @@ function About() {
                                         <Github className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
                                     </a>
                                 </div>
-                                <p className="text-gray-200">Frontend and UX specialist. Mayank crafted the user experience and interface, making BlockHire intuitive and visually appealing for all users.</p>
+                                <p className="text-gray-200">Blockchain developer and architect. Mayank led the smart contract design and security, ensuring trustless transactions and robust escrow logic.</p>
                             </div>
                         </div>
                         <div className="bg-zinc-900 p-4 rounded-xl shadow flex flex-col md:flex-row items-center md:items-start">
@@ -117,7 +117,7 @@ function About() {
                                         <Github className="w-5 h-5 text-gray-400 hover:text-yellow-400" />
                                     </a>
                                 </div>
-                                <p className="text-gray-200">Full-stack developer and mentor. Praduin provided technical guidance, code reviews, and helped integrate decentralized storage and dispute resolution features.</p>
+                                <p className="text-gray-200">Full-stack developer. Praduin provided technical support, code reviews, and helped integrate decentralized storage and dispute resolution features.</p>
                             </div>
                         </div>
                     </div>
