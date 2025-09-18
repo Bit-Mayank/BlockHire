@@ -10,7 +10,7 @@ function Home() {
 
   return (
     <div className=" min-h-screen bg-gray-950 flex pb-16">
-      <div className={`w-full relative top-14 border-2 border-red-600 flex `}>
+      <div className={`w-full relative top-14 flex `}>
         {
           account && isRegistered ?
             <JobsList jobStatus="Open" />

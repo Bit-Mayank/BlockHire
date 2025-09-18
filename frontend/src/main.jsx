@@ -15,7 +15,7 @@ import JobPost from './pages/JobPost.jsx'
 import JobPage from './pages/JobPage.jsx'
 import EditProfile from './pages/EditProfile.jsx'
 import AuthCheck from './pages/AuthCheck.jsx'
-import BidderProfile from './pages/bidderProfile.jsx'
+import BidderProfile from './pages/BidderProfile.jsx'
 import AdminPanel from './pages/AdminPanel.jsx'
 
 const router = createBrowserRouter([
